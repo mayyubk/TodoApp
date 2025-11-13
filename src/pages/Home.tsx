@@ -69,7 +69,7 @@ const Home = () => {
     if (currentHour < 12 && currentHour >= 5) {
       return "Good morning";
     } else if (currentHour < 18 && currentHour > 12) {
-      return "Good afternoon";
+      return "Good ok afternoon";
     } else {
       return "Good evening";
     }
