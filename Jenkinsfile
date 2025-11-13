@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:20-alpine'   // Run pipeline in Node 20 environment
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         APP_NAME = "todoapp"
@@ -9,42 +14,39 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                echo 'Cloning source code...'
+                echo '📦 Cloning repository...'
                 checkout scm
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing npm dependencies...'
+                echo '📦 Installing npm packages...'
                 sh 'npm install --legacy-peer-deps'
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo 'Running tests...'
-                sh 'npm test'
+                echo '🧪 Running unit tests...'
+                sh 'npm test' // Vitest runs fine without --watchAll
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
+                echo '🐳 Building Docker image...'
                 sh "docker build -t ${APP_NAME}:${IMAGE_TAG} ."
             }
         }
 
-        stage('Deploy to Localhost') {
+        stage('Deploy Locally') {
             steps {
-                echo 'Deploying container locally...'
+                echo '🚀 Deploying to localhost...'
                 sh '''
-                    # Stop and remove any existing container
                     docker ps -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME} || true
-
-                    # Run new container
                     docker run -d -p 3000:80 --name ${CONTAINER_NAME} ${APP_NAME}:${IMAGE_TAG}
                 '''
             }
@@ -53,10 +55,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful! Your app is running at http://localhost:3000"
+            echo "✅ Deployment successful! App running at http://localhost:3000"
         }
         failure {
-            echo "❌ Build or deployment failed. Check Jenkins logs."
+            echo "❌ Build or deployment failed. Check Jenkins logs for details."
         }
     }
 }
