@@ -165,11 +165,11 @@ function App() {
         <GlobalStyles />
         <CustomToaster />
         <ErrorBoundary>
-          {/* <MainLayout>
+         <MainLayout>
             <GlobalQuickSaveHandler>
               <AppRouter />
             </GlobalQuickSaveHandler>
-          </MainLayout> */}
+          </MainLayout>
         </ErrorBoundary>
       </EmotionThemeProvider>
     </MuiThemeProvider>
