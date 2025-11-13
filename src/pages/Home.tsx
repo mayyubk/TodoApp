@@ -107,7 +107,7 @@ const Home = () => {
   return (
     <>
       <GreetingHeader>
-        <Emoji unified="1f44b" emojiStyle={emojisStyle} /> &nbsp; {timeGreeting}
+        <Emoji unified="1f44b" emojiStyle={emojisStyle} /> &nbsp; {timeGreeting}{timeGreeting}
         {name && (
           <span translate="no">
             , <span>{name}</span>
