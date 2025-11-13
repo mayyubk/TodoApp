@@ -26,7 +26,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo 'Running tests...'
-                sh 'npm test -- --watchAll=false'
+                sh 'npm test'
             }
         }
 
