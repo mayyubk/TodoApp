@@ -1,14 +1,14 @@
 pipeline {
     agent any
-
     environment {
-        APP_NAME = "todoapp"
+        APP_NAME = "todoapp1"
         IMAGE_TAG = "latest"
         CONTAINER_NAME = "todoapp_container"
         HOST_PORT = "3000"
         CONTAINER_PORT = "80"
+        USER_NAME = "ayyubkhan"
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials') // Add this in Jenkins
     }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,44 +16,47 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Building Docker image: ${APP_NAME}:${IMAGE_TAG}"
-                sh "docker build -t ${APP_NAME}:${IMAGE_TAG} ."
+                echo "🐳 Building Docker image: ${USER_NAME}/${APP_NAME}:${IMAGE_TAG}"
+                sh "docker build -t ${USER_NAME}/${APP_NAME}:${IMAGE_TAG} ."
             }
         }
-
-        stage('Deploy Locally') {
+        stage('Push to Docker Hub') {
             steps {
-                echo "🚀 Deploying container: ${CONTAINER_NAME}"
+                echo "🚀 Pushing image to Docker Hub: ${USER_NAME}/${APP_NAME}:${IMAGE_TAG}"
+                script {
+                    // Login to Docker Hub
+                    sh "echo \$DOCKER_HUB_CREDENTIALS_PSW | docker login -u \$DOCKER_HUB_CREDENTIALS_USR --password-stdin"
+                    // Push the image
+                    sh "docker push ${USER_NAME}/${APP_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+        stage('Deploy Container') {
+            steps {
+                echo "🚢 Deploying container: ${CONTAINER_NAME}"
                 sh """
-                    # Stop the container if it's running
-                    if [ \$(docker ps -q -f "name=${CONTAINER_NAME}") ]; then
-                        echo "Stopping running container..."
-                        docker stop ${CONTAINER_NAME}
-                    fi
-
-                    # Remove the container if it exists (stopped or exited)
-                    if [ \$(docker ps -aq -f "name=${CONTAINER_NAME}") ]; then
-                        echo "Removing existing container..."
-                        docker rm ${CONTAINER_NAME}
-                    fi
-
-                    # Run the new container
-                    echo "Starting new container..."
-                    docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${CONTAINER_NAME} ${APP_NAME}:${IMAGE_TAG}
+                    # Stop and remove existing container if it exists
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    
+                    # Run new container
+                    docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${USER_NAME}/${APP_NAME}:${IMAGE_TAG}
                 """
             }
         }
     }
-
     post {
+        always {
+            echo "🧹 Cleaning up..."
+            sh "docker logout"
+        }
         success {
-            echo "✅ Deployment successful! App running at http://localhost:${HOST_PORT}"
+            echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Deployment failed."
+            echo "❌ Pipeline failed!"
         }
     }
 }
